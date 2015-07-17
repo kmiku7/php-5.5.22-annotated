@@ -814,6 +814,7 @@ static void php_mysql_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 #ifdef CLIENT_MULTI_STATEMENTS
 		client_flags &= ~CLIENT_MULTI_STATEMENTS;   /* don't allow multi_queries via connect parameter */
 #endif
+		// 使用这个作为key维护连接。
 		hashed_details_length = spprintf(&hashed_details, 0, "mysql_%s_%s_%s_%ld", SAFE_STRING(host_and_port), SAFE_STRING(user), SAFE_STRING(passwd), client_flags);
 	}
 
@@ -849,7 +850,10 @@ static void php_mysql_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 		zend_rsrc_list_entry *le;
 
 		/* try to find if we already have this link in our persistent list */
+		// 没有找到可以复用的连接
 		if (zend_hash_find(&EG(persistent_list), hashed_details, hashed_details_length+1, (void **) &le)==FAILURE) {  /* we don't */
+			// 新建持久化连接
+			
 			zend_rsrc_list_entry new_le;
 
 			if (MySG(max_links) != -1 && MySG(num_links) >= MySG(max_links)) {
@@ -915,6 +919,7 @@ static void php_mysql_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 			MySG(num_persistent)++;
 			MySG(num_links)++;
 		} else {  /* The link is in our list of persistent connections */
+			// 复用持久化连接
 			if (Z_TYPE_P(le) != le_plink) {
 				MYSQL_DO_CONNECT_RETURN_FALSE();
 			}
@@ -952,6 +957,7 @@ static void php_mysql_do_connect(INTERNAL_FUNCTION_PARAMETERS, int persistent)
 		}
 		ZEND_REGISTER_RESOURCE(return_value, mysql, le_plink);
 	} else { /* non persistent */
+		// 短链接
 		zend_rsrc_list_entry *index_ptr, new_index_ptr;
 
 		/* first we check the hash for the hashed_details key.  if it exists,

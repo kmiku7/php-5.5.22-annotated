@@ -213,6 +213,7 @@ struct _zend_executor_globals {
 	OSVERSIONINFOEX windows_version_info;
 #endif
 
+	// 这里保存的resource
 	HashTable regular_list;
 	HashTable persistent_list;
 

@@ -1539,6 +1539,7 @@ static void php_mysql_do_query_general(char *query, int query_len, zval *mysql_l
 
 /* {{{ php_mysql_do_query
  */
+// php_mysql_do_query(INTERNAL_FUNCTION_PARAM_PASSTHRU, MYSQL_STORE_RESULT);
 static void php_mysql_do_query(INTERNAL_FUNCTION_PARAMETERS, int use_store)
 {
 	char *query;
@@ -2058,6 +2059,7 @@ PHP_FUNCTION(mysql_num_fields)
 
 /* {{{ php_mysql_fetch_hash
  */
+// php_mysql_fetch_hash(INTERNAL_FUNCTION_PARAM_PASSTHRU, MYSQL_ASSOC, 1, 0);
 static void php_mysql_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_type, int expected_args, int into_object)
 {
 	MYSQL_RES *mysql_result;
@@ -2108,12 +2110,14 @@ static void php_mysql_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_type,
 
 	ZEND_FETCH_RESOURCE(mysql_result, MYSQL_RES *, &res, -1, "MySQL result", le_result);
 
+	// 不使用mysqlnd
 #ifndef MYSQL_USE_MYSQLND
 	if ((mysql_row = mysql_fetch_row(mysql_result)) == NULL  ||
 		(mysql_row_lengths = mysql_fetch_lengths(mysql_result)) == NULL) {
 		RETURN_FALSE;
 	}
 
+	// 结果初始化为array
 	array_init(return_value);
 
 	mysql_field_seek(mysql_result, 0);
@@ -2126,10 +2130,12 @@ static void php_mysql_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_type,
 
 			MAKE_STD_ZVAL(data);
 
+			// 跟5.3.25是这里有区别，加了宏。
 #if PHP_API_VERSION < 20100412
 			if (PG(magic_quotes_runtime)) {
 				Z_TYPE_P(data) = IS_STRING;
 				Z_STRVAL_P(data) = php_addslashes(mysql_row[i], mysql_row_lengths[i], &Z_STRLEN_P(data), 0 TSRMLS_CC);
+				// 这里没设置len??
 			} else {
 #endif
 				ZVAL_STRINGL(data, mysql_row[i], mysql_row_lengths[i], 1);
@@ -2144,6 +2150,7 @@ static void php_mysql_fetch_hash(INTERNAL_FUNCTION_PARAMETERS, long result_type,
 				if (result_type & MYSQL_NUM) {
 					Z_ADDREF_P(data);
 				}
+				// 结果插入到数组.
 				add_assoc_zval(return_value, mysql_field->name, data);
 			}
 		} else {
@@ -2267,6 +2274,7 @@ PHP_FUNCTION(mysql_fetch_array)
    Fetch a result row as an associative array */
 PHP_FUNCTION(mysql_fetch_assoc)
 {
+	// 直到这里代码还是跟5.3.25相同。
 	php_mysql_fetch_hash(INTERNAL_FUNCTION_PARAM_PASSTHRU, MYSQL_ASSOC, 1, 0);
 }
 /* }}} */

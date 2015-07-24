@@ -1594,8 +1594,10 @@ php_mysqlnd_rowp_read_text_protocol(MYSQLND_MEMORY_POOL_CHUNK * row_buffer, zval
 
 	end_field = (start_field = fields) + field_count;
 
+	// 这里进行分配的。
 	for (i = 0, current_field = start_field; current_field < end_field; current_field++, i++) {
 		DBG_INF("Directly creating zval");
+		// 从这里看每个zval结构体是zend-mm管理的，如果是字符串的话，字符串则是buffer数据。
 		MAKE_STD_ZVAL(*current_field);
 		if (!*current_field) {
 			DBG_RETURN(FAIL);

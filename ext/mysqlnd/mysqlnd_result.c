@@ -725,6 +725,7 @@ mysqlnd_fetch_row_unbuffered_c(MYSQLND_RES * result TSRMLS_DC)
 
 
 /* {{{ mysqlnd_fetch_row_unbuffered */
+// inner result struct -> php array
 static enum_func_status
 mysqlnd_fetch_row_unbuffered(MYSQLND_RES * result, void *param, unsigned int flags, zend_bool *fetched_anything TSRMLS_DC)
 {
@@ -927,6 +928,7 @@ mysqlnd_fetch_row_buffered_c(MYSQLND_RES * result TSRMLS_DC)
 		struct mysqlnd_field_hash_key * hash_key = result->meta->zend_hash_keys;
 		unsigned int i;
 
+		// current_row是一个 zval **
 		if (NULL == current_row[0]) {
 			uint64_t row_num = (set->data_cursor - set->data) / result->meta->field_count;
 			enum_func_status rc = result->m.row_decoder(set->row_buffers[row_num],
@@ -1001,6 +1003,7 @@ mysqlnd_fetch_row_buffered(MYSQLND_RES * result, void *param, unsigned int flags
 
 		if (NULL == current_row[0]) {
 			uint64_t row_num = (set->data_cursor - set->data) / result->meta->field_count;
+			// 这边是current_row的构造。
 			enum_func_status rc = result->m.row_decoder(set->row_buffers[row_num],
 											current_row,
 											result->meta->field_count,
@@ -1027,6 +1030,7 @@ mysqlnd_fetch_row_buffered(MYSQLND_RES * result, void *param, unsigned int flags
 		}
 
 		for (i = 0; i < result->field_count; i++, field++, hash_key++) {
+			// 这边直接将current_row里的zval插入到hash里。
 			zval *data = current_row[i];
 
 			if (flags & MYSQLND_FETCH_NUM) {
@@ -1464,6 +1468,12 @@ MYSQLND_METHOD(mysqlnd_res, field_tell)(const MYSQLND_RES * const result TSRMLS_
 
 
 /* {{{ mysqlnd_res::fetch_into */
+// 一组参数
+// mysqlnd_fetch_into(mysql_result, ((result_type & MYSQL_NUM)? MYSQLND_FETCH_NUM:0) | ((result_type & MYSQL_ASSOC)? MYSQLND_FETCH_ASSOC:0), return_value, MYSQLND_MYSQL);
+// result:	mysql_result
+// flags:	
+// return_value:
+// extension: 
 static void
 MYSQLND_METHOD(mysqlnd_res, fetch_into)(MYSQLND_RES * result, unsigned int flags,
 										zval *return_value,
@@ -1608,7 +1618,7 @@ MYSQLND_METHOD(mysqlnd_res, fetch_field_data)(MYSQLND_RES * result, unsigned int
 }
 /* }}} */
 
-
+// result method object defined here.
 MYSQLND_CLASS_METHODS_START(mysqlnd_res)
 	NULL, /* fetch_row */
 	mysqlnd_fetch_row_buffered,

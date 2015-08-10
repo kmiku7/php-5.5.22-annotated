@@ -1364,7 +1364,7 @@ static int php_plain_files_metadata(php_stream_wrapper *wrapper, char *url, int 
 	return 1;
 }
 
-
+// plain file operator
 static php_stream_wrapper_ops php_plain_files_wrapper_ops = {
 	php_plain_files_stream_opener,
 	NULL,
